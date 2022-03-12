@@ -24,6 +24,7 @@ class ArticleResultFragment: Fragment() {
     private val articles = mutableListOf<Article>()
     private lateinit var progressSpinner: ContentLoadingProgressBar
     private lateinit var rvArticles: RecyclerView
+    private lateinit var articleAdapter: ArticleResultsRecyclerViewAdapter
 
     override fun onPrepareOptionsMenu(menu: Menu) {
         val item = menu.findItem(R.id.action_search).actionView as SearchView
@@ -53,7 +54,7 @@ class ArticleResultFragment: Fragment() {
         rvArticles = view.findViewById(R.id.list)
         progressSpinner = view.findViewById(R.id.progress)
 
-        val articleAdapter = ArticleResultsRecyclerViewAdapter(articles)
+        articleAdapter = ArticleResultsRecyclerViewAdapter(articles)
         rvArticles.adapter = articleAdapter
         rvArticles.layoutManager = LinearLayoutManager(requireContext())
         return inflater.inflate(layout.fragment_article_result_list, container, false)
@@ -63,6 +64,27 @@ class ArticleResultFragment: Fragment() {
         Log.d("ArticleResultFragment", "loading articles for query $query")
         Toast.makeText(context, "Loading articles for \'$query\'", Toast.LENGTH_SHORT).show()
         // TODO(Checkpoint 3): Implement this method to populate articles
+        val response = object : CallbackResponse<List<Article>> {
+            override fun onSuccess(model: List<Article>) {
+                articleAdapter.setNewArticles(newArticles = model)
+                articleAdapter.notifyDataSetChanged()
+
+                progressSpinner.hide()
+            }
+
+            override fun onFailure(error: Throwable?) {
+                Toast.makeText(context, error?.message, Toast.LENGTH_SHORT).show()
+                Log.d(ArticleResultFragment::class.java.simpleName, "failure")
+            }
+        }
+
+        Toast.makeText(context, "Loading articles for \'$query\'", Toast.LENGTH_SHORT).show()
+        progressSpinner.show()
+
+        client.getArticlesByQuery(
+            articlesListResponse = response,
+            query = query
+        )
         client.getArticlesByQuery(articles as CallbackResponse<List<Article>>, query)
     }
 
